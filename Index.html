@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Earning & Investment Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: #0f172a; color: #f8fafc; padding-bottom: 75px; user-select: none; }
+    
+    /* Header */
+    .header { background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 20px 15px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .user-box { display: flex; align-items: center; gap: 12px; }
+    .user-img { width: 55px; height: 55px; border-radius: 50%; background: #fff; object-fit: cover; border: 2px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e293b; font-size: 20px; overflow: hidden; cursor: pointer; }
+    .user-img img { width: 100%; height: 100%; object-fit: cover; }
+    .balance-card { background: rgba(255,255,255,0.12); backdrop-filter: blur(10px); margin-top: 15px; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .balance-card h3 { font-size: 20px; color: #38bdf8; }
+
+    /* Pages */
+    .page { display: none; padding: 15px; }
+    .page.active { display: block; }
+    h3 { margin-bottom: 10px; font-size: 18px; color: #e2e8f0; }
+
+    /* Cards & Grids */
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
+    .product-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; }
+    .product-card.locked { opacity: 0.6; border-color: #ef4444; }
+    .badge { background: #10b981; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 20px; float: right; }
+    .badge.lock { background: #ef4444; }
+    .btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; transition: 0.2s; }
+    .btn:active { background: #1d4ed8; }
+    .btn-success { background: #10b981; }
+
+    /* Inputs */
+    .input-group { margin-bottom: 12px; }
+    .input-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #94a3b8; }
+    .input-group input, .input-group select { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 15px; }
+
+    /* Navbar */
+    .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; border-top: 1px solid #334155; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .nav-item { color: #64748b; text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; cursor: pointer; }
+    .nav-item i { font-size: 18px; margin-bottom: 3px; }
+    .nav-item.active { color: #38bdf8; }
+
+    /* Modal / Popup */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 2000; display: none; }
+    .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; border: 1px solid #334155; }
+  </style>
+</head>
+<body>
+
+  <!-- Mandatory Device-Locked Mobile Verification Modal -->
+  <div class="modal" id="verificationModal" style="display: flex;">
+    <div class="modal-content">
+      <h3>🛡️ অ্যান্টি-স্ক্যাম মোবাইল ভেরিফিকেশন</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">এক ফোনে ১টির বেশি অ্যাকাউন্ট খোলা নিষিদ্ধ। আপনার নাম ও ১১ ডিজিটের মোবাইল নম্বর দিন।</p>
+      <div class="input-group">
+        <label>আপনার নাম</label>
+        <input type="text" id="setupName" placeholder="আপনার নাম লিখুন">
+      </div>
+      <div class="input-group">
+        <label>মোবাইল নম্বর (বিকাশ/নগদ)</label>
+        <input type="text" id="setupPhone" placeholder="01700000000">
+      </div>
+      <button class="btn btn-success" onclick="verifyAndRegisterDevice()">ভেরিফাই ও একাউন্ট খুলুন</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="user-box">
+      <div class="user-img" id="userAvatarBox" onclick="showPage('profile')">U</div>
+      <div>
+        <h4 id="userName">ইউজার</h4>
+        <small style="color: #cbd5e1;" id="userPhoneDisplay">নম্বর যুক্ত হয়নি</small>
+      </div>
+    </div>
+    <div class="balance-card">
+      <div>
+        <small style="color: #cbd5e1;">মোট ব্যালেন্স</small>
+        <h3 id="mainBalance">৳ 100.00</h3>
+      </div>
+      <button class="btn" style="width: auto; padding: 8px 12px;" onclick="showPage('wallet')">ওয়ালেট</button>
+    </div>
+  </div>
+
+  <!-- PAGE 1: HOME & PRODUCTS -->
+  <div id="home" class="page active">
+    <h3>🎁 ফ্রি প্রোডাক্ট</h3>
+    <div class="product-card">
+      <span class="badge">ফ্রি অফার</span>
+      <h4>স্টার্টার ফ্রি প্যাক</h4>
+      <p style="font-size: 13px; color: #94a3b8; margin: 5px 0;">মূল্য: ৳ ১০০ (সাইনআপ বোনাস)</p>
+      <p style="font-size: 13px; color: #10b981;">কমিশন: ২.৫% প্রতিদিন</p>
+      <button class="btn" onclick="buyProduct('Free Starter', 100)">ক্রয় করুন</button>
+    </div>
+
+    <h3>💼 প্রিমিয়াম ক্যাটাগরি</h3>
+    
+    <div class="product-card locked" id="card-silver">
+      <span class="badge lock" id="badge-silver">লকড</span>
+      <h4>🥈 সিলভার ক্যাটাগরি (৳৫০০ & ৳১০০০)</h4>
+      <p style="font-size: 13px; color: #94a3b8; margin: 5px 0;">কমিশন: ৩% | সাবস্ক্রিপশন: ৳২০০</p>
+      <button class="btn" onclick="subscribeCategory('silver', 200)">সিলভার সাবস্ক্রাইব (৳২০০)</button>
+    </div>
+
+    <div class="product-card locked" id="card-platinum">
+      <span class="badge lock" id="badge-platinum">লকড</span>
+      <h4>🥇 প্ল্যাটিনাম ক্যাটাগরি (৳১৫০০ & ৳২০০০)</h4>
+      <p style="font-size: 13px; color: #94a3b8; margin: 5px 0;">কমিশন: ৪% | সাবস্ক্রিপশন: ৳৫০০</p>
+      <button class="btn" onclick="subscribeCategory('platinum', 500)">ప్లాটিনাম সাবস্ক্রাইব (৳৫০০)</button>
+    </div>
+
+    <div class="product-card locked" id="card-gold">
+      <span class="badge lock" id="badge-gold">লকড</span>
+      <h4>👑 গোল্ড ক্যাটাগরি (৳৩০০০ & ৳৫০০০)</h4>
+      <p style="font-size: 13px; color: #94a3b8; margin: 5px 0;">কমিশন: ৫% | সাবস্ক্রিপশন: ৳১০০০</p>
+      <button class="btn" onclick="subscribeCategory('gold', 1000)">গোল্ড সাবস্ক্রাইব (৳১০০০)</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: TASKS (ADS) -->
+  <div id="tasks" class="page">
+    <h3>📺 এড দেখে ইনকাম</h3>
+    <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">প্রতি এড দেখে আয় করুন ০.১ টাকা</p>
+    
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>বিজ্ঞাপন টাস্ক</strong>
+          <p style="font-size: 12px; color: #10b981;">রিওয়ার্ড: ৳ ০.১</p>
+        </div>
+        <button class="btn" style="width: auto; padding: 8px 15px;" onclick="watchAd()">এড দেখুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 3: WALLET & DEPOSIT / WITHDRAW -->
+  <div id="wallet" class="page">
+    <h3>💳 ওয়ালেট ও ডিপোজিট</h3>
+    <div class="card">
+      <p>ফ্রি মূলধন ও বোনাস: <b id="cashBalance" style="color: #38bdf8;">৳100.00</b></p>
+      <p>উত্তোলনযোগ্য কমিশন: <b id="commissionBalance" style="color: #10b981;">৳0.00</b></p>
+    </div>
+
+    <!-- Deposit Section -->
+    <h3>ডিপোজিট করুন</h3>
+    <div class="card" style="border: 1px solid #38bdf8;">
+      <p style="font-size: 14px; margin-bottom: 5px; color: #38bdf8;"><b>উক্ত নাম্বারে সেন্ডমানি করতে হবে:</b></p>
+      <h3 style="background: #0f172a; padding: 10px; border-radius: 8px; text-align: center; letter-spacing: 1px; color: #facc15;">01408060248</h3>
+      <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">টাকা পাঠিয়ে নিচের তথ্যগুলো পূরণ করুন:</p>
+
+      <div class="input-group">
+        <label>ডিপোজিট পরিমাণ (৳)</label>
+        <input type="number" id="depAmount" placeholder="টাকার পরিমাণ লিখুন">
+      </div>
+      <div class="input-group">
+        <label>যে নম্বর থেকে টাকা পাঠিয়েছেন</label>
+        <input type="text" id="senderNumber" placeholder="আপনার মোবাইল নম্বর">
+      </div>
+      <div class="input-group">
+        <label>ট্রানজেকশন আইডি (TrxID)</label>
+        <input type="text" id="trxId" placeholder="যেমন: 9J87X6K5">
+      </div>
+      <div class="input-group">
+        <label>পেমেন্ট স্ক্রিনশট আপলোড করুন</label>
+        <input type="file" id="screenshotFile" accept="image/*" style="padding: 7px;">
+      </div>
+      <button class="btn btn-success" onclick="submitDeposit()">ডিপোজিট রিকোয়েস্ট পাঠান</button>
+    </div>
+
+    <!-- Withdraw Section -->
+    <h3>💸 টাকা উত্তোলন (Withdraw)</h3>
+    
+    <!-- Free Withdraw Card -->
+    <div class="card">
+      <h4 style="color: #38bdf8; margin-bottom: 8px;">১. ফ্রি বোনাস ক্যাশআউট</h4>
+      <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">শর্ত: শুধু সংগৃহীত কমিশন ২০০ টাকা বা তার বেশি হলে তুলতে পারবেন (মূলধন ১০০ টাকা লক থাকবে)।</p>
+      <div class="input-group">
+        <input type="number" id="freeWAmount" placeholder="উত্তোলনের পরিমাণ লিখুন">
+      </div>
+      <button class="btn" onclick="requestFreeWithdraw()">ফ্রি কমিশন তুলুন</button>
+    </div>
+
+    <!-- Premium Withdraw Card -->
+    <div class="card">
+      <h4 style="color: #10b981; margin-bottom: 8px;">২. প্রিমিয়াম ক্যাশআউট</h4>
+      <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">শর্ত: সাপ্তাহিক ২০% কমিশন এবং সাবস্ক্রিপশন মেয়াদ শেষে মূলধনসহ সম্পূর্ণ ব্যালেন্স তুলতে পারবেন।</p>
+      <div class="input-group">
+        <input type="number" id="premWAmount" placeholder="উত্তোলনের পরিমাণ লিখুন">
+      </div>
+      <button class="btn btn-success" onclick="requestPremiumWithdraw()">প্রিমিয়াম ব্যালেন্স তুলুন</button>
+    </div>
+  </div>
+
+  <!-- PAGE 4: PROFILE -->
+  <div id="profile" class="page">
+    <h3>👤 ইউজার প্রোফাইল ও সেটিংস</h3>
+    <div class="card" style="text-align: center;">
+      <div id="profileImgContainer" style="width: 75px; height: 75px; border-radius: 50%; margin: 0 auto 10px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #1e293b; overflow:hidden;">U</div>
+      <h4 id="profileName">ইউজার</h4>
+      <p style="font-size: 13px; color: #94a3b8;" id="profilePhone">নম্বর: যুক্ত হয়নি</p>
+    </div>
+
+    <div class="card">
+      <h4>🖼️ অবতার (Avatar) পরিবর্তন করুন</h4>
+      <div class="input-group" style="margin-top: 8px;">
+        <input type="file" id="avatarUpload" accept="image/*" style="padding: 7px;">
+      </div>
+      <button class="btn" onclick="updateAvatar()">ছবি সেভ করুন</button>
+    </div>
+
+    <div class="card">
+      <p><b>রেফারেল লিংক:</b></p>
+      <button class="btn" style="margin-top: 8px;" onclick="copyReferral()">রেফার লিংক কপি করুন (বোনাস ২০৳)</button>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="nav-item active" onclick="showPage('home')"><i class="fa-solid fa-shop"><span>শপ</span></i></div>
+    <div class="nav-item" onclick="showPage('tasks')"><i class="fa-solid fa-rectangle-ad"><span>টাস্ক</span></i></div>
+    <div class="nav-item" onclick="showPage('wallet')"><i class="fa-solid fa-wallet"><span>ওয়ালেট</span></i></div>
+    <div class="nav-item" onclick="showPage('profile')"><i class="fa-solid" style="font-family:'Font Awesome 6 Free'; font-weight:900;">&#xf007;</i><span>প্রোফাইল</span></i></div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // Anti-Scam Device & Phone Binding Check
+    let deviceRegistered = localStorage.getItem('device_locked_verification');
+    let isVerified = localStorage.getItem('is_verified') === 'true';
+
+    // If this device already registered an account, block opening new verification modal for another account
+    if (deviceRegistered && isVerified) {
+      document.getElementById('verificationModal').style.display = 'none';
+    } else {
+      document.getElementById('verificationModal').style.display = 'flex';
+    }
+
+    let balance = parseFloat(localStorage.getItem('user_balance')) || 100.00;
+    let commission = parseFloat(localStorage.getItem('user_commission')) || 0.00;
+    let userName = localStorage.getItem('user_name') || 'ইউজার';
+    let userPhone = localStorage.getItem('user_phone') || '';
+    let userAvatar = localStorage.getItem('user_avatar') || '';
+    let isPremium = JSON.parse(localStorage.getItem('is_premium')) || false;
+    let subscriptions = JSON.parse(localStorage.getItem('user_subs')) || { silver: false, platinum: false, gold: false };
+
+    if (isVerified) {
+      document.getElementById('userName').innerText = userName;
+      document.getElementById('profileName').innerText = userName;
+      document.getElementById('userPhoneDisplay').innerText = userPhone;
+      document.getElementById('profilePhone').innerText = 'নম্বর: ' + userPhone;
+      
+      if(userAvatar) {
+        document.getElementById('userAvatarBox').innerHTML = `<img src="${userAvatar}" alt="Avatar">`;
+        document.getElementById('profileImgContainer').innerHTML = `<img src="${userAvatar}" alt="Avatar">`;
+      } else {
+        document.getElementById('userAvatarBox').innerText = userName.charAt(0);
+        document.getElementById('profileImgContainer').innerText = userName.charAt(0);
+      }
+    }
+
+    function verifyAndRegisterDevice() {
+      const name = document.getElementById('setupName').value.trim();
+      const phone = document.getElementById('setupPhone').value.trim();
+
+      if(!name || phone.length < 11) {
+        tg.showAlert('দয়া করে সঠিক নাম এবং ১১ ডিজিটের মোবাইল নম্বর দিন!');
+        return;
+      }
+
+      // Check if device already locked
+      if(localStorage.getItem('device_locked_verification')) {
+        tg.showAlert('সতর্কতা: এই ডিভাইস থেকে ইতিপূর্বেই একটি একাউন্ট খোলা হয়েছে! ১ ফোনে ১টির বেশি একাউন্ট নিষিদ্ধ।');
+        return;
+      }
+
+      localStorage.setItem('device_locked_verification', 'locked_' + phone);
+      localStorage.setItem('is_verified', 'true');
+      localStorage.setItem('user_name', name);
+      localStorage.setItem('user_phone', phone);
+      
+      location.reload();
+    }
+
+    function updateAvatar() {
+      const fileInput = document.getElementById('avatarUpload');
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          localStorage.setItem('user_avatar', e.target.result);
+          document.getElementById('userAvatarBox').innerHTML = `<img src="${e.target.result}" alt="Avatar">`;
+          document.getElementById('profileImgContainer').innerHTML = `<img src="${e.target.result}" alt="Avatar">`;
+          tg.showAlert('প্রোফাইল পিকচার সফলভাবে আপডেট হয়েছে!');
+        }
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        tg.showAlert('দয়া করে একটি ছবি সিলেক্ট করুন।');
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('mainBalance').innerText = '৳ ' + (balance + commission).toFixed(2);
+      document.getElementById('cashBalance').innerText = '৳ ' + balance.toFixed(2);
+      document.getElementById('commissionBalance').innerText = '৳ ' + commission.toFixed(2);
+      
+      localStorage.setItem('user_balance', balance);
+      localStorage.setItem('user_commission', commission);
+
+      ['silver', 'platinum', 'gold'].forEach(sub => {
+        if(subscriptions[sub]) {
+          document.getElementById(`card-${sub}`).classList.remove('locked');
+          document.getElementById(`badge-${sub}`).innerText = 'আনলকড';
+          document.getElementById(`badge-${sub}`).className = 'badge';
+        }
+      });
+    }
+    updateUI();
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      event.currentTarget.classList.add('active');
+      if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function buyProduct(name, price) {
+      if(balance < price) {
+        tg.showAlert('পর্যাপ্ত ব্যালেন্স নেই!');
+        return;
+      }
+      balance -= price;
+      updateUI();
+      tg.showAlert(`সফলভাবে ${name} ক্রয় করা হয়েছে!`);
+    }
+
+    function subscribeCategory(category, fee) {
+      if((balance + commission) < fee) {
+        tg.showAlert(`সাবস্ক্রিপশনের জন্য ${fee} টাকা প্রয়োজন।`);
+        return;
+      }
+      balance -= fee;
+      subscriptions[category] = true;
+      isPremium = true;
+      localStorage.setItem('is_premium', JSON.stringify(isPremium));
+      localStorage.setItem('user_subs', JSON.stringify(subscriptions));
+      updateUI();
+      tg.showAlert('অভিনন্দন! ক্যাটাগরি সফলভাবে সাবস্ক্রাইব ও আনলক হয়েছে।');
+    }
+
+    function watchAd() {
+      commission += 0.10;
+      updateUI();
+      tg.showAlert('বিজ্ঞাপন দেখা শেষ! ০.১০ টাকা কমিশন যোগ হয়েছে।');
+    }
+
+    function submitDeposit() {
+      const amt = document.getElementById('depAmount').value;
+      const sender = document.getElementById('senderNumber').value;
+      const trx = document.getElementById('trxId').value;
+      const file = document.getElementById('screenshotFile').files.length;
+
+      if(!amt || !sender || !trx || file === 0) {
+        tg.showAlert('অনুগ্রহ করে পেমেন্ট নম্বর, ট্রানজেকশন আইডি এবং স্ক্রিনশটের ছবিসহ সব তথ্য দিন।');
+        return;
+      }
+      tg.showAlert('ডিপোজিট রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে!');
+    }
+
+    function requestFreeWithdraw() {
+      const amt = parseFloat(document.getElementById('freeWAmount').value);
+      if(!amt || amt <= 0) {
+        tg.showAlert('সঠিক পরিমাণ লিখুন।');
+        return;
+      }
+      if(commission < 200) {
+        tg.showAlert('ফ্রি ইউজারদের ক্ষেত্রে কমিশন কমপক্ষে ২০০ টাকা হতে হবে।');
+        return;
+      }
+      if(amt > commission) {
+        tg.showAlert('উত্তোলনের জন্য পর্যাপ্ত কমিশন ব্যালেন্স নেই।');
+        return;
+      }
+      commission -= amt;
+      updateUI();
+      tg.showAlert('ফ্রি কমিশন উইথড্র রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে!');
+    }
+
+    function requestPremiumWithdraw() {
+      const amt = parseFloat(document.getElementById('premWAmount').value);
+      if(!amt || amt <= 0) {
+        tg.showAlert('সঠিক পরিমাণ লিখুন।');
+        return;
+      }
+      if(!isPremium) {
+        tg.showAlert('এই অপশনটি শুধুমাত্র প্রিমিয়াম ইউজারদের জন্য প্রযোজ্য!');
+        return;
+      }
+      if(amt > (balance + commission)) {
+        tg.showAlert('পর্যাপ্ত ব্যালেন্স নেই।');
+        return;
+      }
+      balance -= amt;
+      updateUI();
+      tg.showAlert('প্রিমিয়াম উইথড্র রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে!');
+    }
+
+    function copyReferral() {
+      navigator.clipboard.writeText(`https://t.me/your_bot?start=ref_${tg.initDataUnsafe?.user?.id || '123'}`);
+      tg.showAlert('রেফারেল লিংক কপি করা হয়েছে!');
+    }
+  </script>
+</body>
+</html>
