@@ -3,63 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Earning Mini App</title>
-  <!-- Telegram WebApp SDK -->
+  <title>Bee Bot Pro - Earning & Investment App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    body { background-color: #0f172a; color: #f8fafc; padding-bottom: 75px; user-select: none; }
+    body { background-color: #0b0f19; color: #f8fafc; padding-bottom: 75px; user-select: none; }
     
-    .header { background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 20px 15px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .header { background: linear-gradient(135deg, #1e40af, #2563eb); padding: 20px 15px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     .user-box { display: flex; align-items: center; gap: 12px; }
-    .user-img { width: 55px; height: 55px; border-radius: 50%; background: #fff; object-fit: cover; border: 2px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e293b; font-size: 20px; overflow: hidden; }
+    .user-img { width: 55px; height: 55px; border-radius: 50%; background: #fff; border: 2px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1e293b; font-size: 20px; overflow: hidden; cursor: pointer; }
     .user-img img { width: 100%; height: 100%; object-fit: cover; }
-    .balance-card { background: rgba(255,255,255,0.12); backdrop-filter: blur(10px); margin-top: 15px; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .balance-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(12px); margin-top: 15px; padding: 15px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
     .balance-card h3 { font-size: 20px; color: #38bdf8; }
+
+    .notice-bar { background: #1e293b; border-left: 4px solid #f59e0b; padding: 10px 15px; margin: 15px; border-radius: 8px; font-size: 13px; color: #cbd5e1; display: flex; align-items: center; gap: 10px; }
 
     .page { display: none; padding: 15px; }
     .page.active { display: block; }
-    h3 { margin-bottom: 10px; font-size: 18px; color: #e2e8f0; }
+    h3 { margin-bottom: 12px; font-size: 18px; color: #e2e8f0; }
 
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
-    .product-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; }
-    .product-card.locked { opacity: 0.6; border-color: #ef4444; }
-    .badge { background: #10b981; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 20px; float: right; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    .product-card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 16px; margin-bottom: 14px; position: relative; }
+    .product-card.locked { opacity: 0.7; border-color: #ef4444; }
+    .badge { background: #10b981; color: #fff; font-size: 11px; padding: 4px 10px; border-radius: 20px; float: right; font-weight: bold; }
     .badge.lock { background: #ef4444; }
-    .btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; transition: 0.2s; }
-    .btn:active { background: #1d4ed8; }
+    
+    .btn { background: #2563eb; color: white; border: none; padding: 11px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s; font-size: 14px; }
+    .btn:active { background: #1d4ed8; transform: scale(0.98); }
     .btn-success { background: #10b981; }
+    .btn-warning { background: #f59e0b; color: #0b0f19; }
 
     .input-group { margin-bottom: 12px; }
     .input-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #94a3b8; }
-    .input-group input { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 15px; }
+    .input-group input, .input-group select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #0b0f19; color: white; font-size: 15px; }
 
-    .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; border-top: 1px solid #334155; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    /* Spin Wheel UI */
+    .spin-container { text-align: center; background: #1e293b; border-radius: 16px; padding: 20px; border: 1px solid #334155; }
+    .wheel-box { width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#2563eb 0deg 90deg, #10b981 90deg 180deg, #f59e0b 180deg 270deg, #ef4444 270deg 360deg); margin: 20px auto; display: flex; align-items: center; justify-content: center; border: 4px solid #38bdf8; box-shadow: 0 0 20px rgba(56,189,248,0.3); transition: 3s cubic-bezier(0.15, 0.9, 0.2, 1); }
+    .wheel-inner { width: 50px; height: 50px; background: #0b0f19; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #38bdf8; border: 2px solid #38bdf8; }
+
+    .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: #0b0f19; border-top: 1px solid #334155; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
     .nav-item { color: #64748b; text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; cursor: pointer; }
     .nav-item i { font-size: 18px; margin-bottom: 3px; }
     .nav-item.active { color: #38bdf8; }
 
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 2000; display: none; }
-    .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; border: 1px solid #334155; }
+    .modal-content { background: #1e293b; padding: 22px; border-radius: 18px; width: 90%; max-width: 350px; text-align: center; border: 1px solid #334155; }
   </style>
 </head>
 <body>
 
-  <!-- Verification Modal -->
+  <!-- Mandatory Device Verification Modal -->
   <div class="modal" id="verificationModal" style="display: flex;">
     <div class="modal-content">
-      <h3>🛡️ মোবাইল ভেরিফিকেশন</h3>
-      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">এক ফোনে ১টির বেশি অ্যাকাউন্ট খোলা নিষিদ্ধ। নাম ও মোবাইল নম্বর দিন।</p>
+      <h3>🛡️ একাউন্ট ভেরিফিকেশন</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">নিরাপত্তার জন্য আপনার নাম ও সঠিক মোবাইল নম্বরটি প্রদান করুন।</p>
       <div class="input-group">
         <label>আপনার নাম</label>
-        <input type="text" id="setupName" placeholder="আপনার নাম লিখুন">
+        <input type="text" id="setupName" placeholder="পূর্ণ নাম লিখুন">
       </div>
       <div class="input-group">
-        <label>মোবাইল নম্বর</label>
+        <label>মোবাইল নম্বর (বিকাশ/নগদ)</label>
         <input type="text" id="setupPhone" placeholder="01700000000">
       </div>
-      <button class="btn btn-success" onclick="verifyAndRegisterDevice()">ভেরিফাই করুন</button>
+      <button class="btn btn-success" onclick="verifyAndRegisterDevice()">শুরু করুন</button>
     </div>
   </div>
 
@@ -77,74 +85,155 @@
         <small style="color: #cbd5e1;">মোট ব্যালেন্স</small>
         <h3 id="mainBalance">৳ 100.00</h3>
       </div>
-      <button class="btn" style="width: auto; padding: 8px 12px;" onclick="showPage('wallet')">ওয়ালেট</button>
+      <button class="btn" style="width: auto; padding: 8px 12px; margin: 0;" onclick="showPage('wallet')">ওয়ালেট</button>
     </div>
   </div>
 
-  <!-- HOME PAGE -->
+  <!-- Notice Bar -->
+  <div class="notice-bar">
+    <i class="fa-solid fa-bullhorn" style="color: #f59e0b; font-size: 16px;"></i>
+    <span>নোট: প্রতিদিন নিয়ম মেনে টাস্ক ও স্পিন কমপ্লিট করুন। উইথড্র রিকোয়েস্ট ২৪ ঘণ্টার মধ্যে পেমেন্ট করা হয়।</span>
+  </div>
+
+  <!-- PAGE 1: HOME & PRODUCTS -->
   <div id="home" class="page active">
-    <h3>🎁 ফ্রি প্রোডাক্ট</h3>
+    <h3>🎁 ফ্রি ও প্রিমিয়াম প্যাক</h3>
     <div class="product-card">
       <span class="badge">ফ্রি অফার</span>
       <h4>স্টার্টার ফ্রি প্যাক</h4>
       <p style="font-size: 13px; color: #94a3b8; margin: 5px 0;">মূল্য: ৳ ১০০ (সাইনআপ বোনাস)</p>
-      <button class="btn" onclick="buyProduct('Free Starter', 100)">ক্রয় করুন</button>
+      <p style="font-size: 13px; color: #10b981;">দৈনিক প্রফিট: ২.৫%</p>
+      <button class="btn" onclick="buyProduct('Free Starter', 100)">অ্যাক্টিভ আছে</button>
+    </div>
+
+    <div class="product-card locked" id="card-silver">
+      <span class="badge lock" id="badge-silver">লকড</span>
+      <h4>🥈 সিলভার ক্যাটাগরি</h4>
+      <p style="font-size: 13px; color: #94a3b8; margin: 5px 0;">সাবস্ক্রিপশন ফি: ৳ ২০০</p>
+      <button class="btn" onclick="subscribeCategory('silver', 200)">সিলভার আনলক করুন</button>
+    </div>
+
+    <div class="product-card locked" id="card-gold">
+      <span class="badge lock" id="badge-gold">লکড</span>
+      <h4>👑 গোল্ড ক্যাটাগরি</h4>
+      <p style="font-size: 13px; color: #94a3b8; margin: 5px 0;">সাবস্ক্রিপশন ফি: ৳ ১০০০</p>
+      <button class="btn" onclick="subscribeCategory('gold', 1000)">গোল্ড আনলক করুন</button>
     </div>
   </div>
 
-  <!-- WALLET PAGE -->
-  <div id="wallet" class="page">
-    <h3>💳 ওয়ালেট</h3>
+  <!-- PAGE 2: TASKS & SPIN -->
+  <div id="tasks" class="page">
+    <h3>🎡 লাকি স্পিন (Daily Spin)</h3>
+    <div class="spin-container">
+      <div class="wheel-box" id="spinWheel">
+        <div class="wheel-inner">WIN</div>
+      </div>
+      <p id="spinStatus" style="font-size: 13px; color: #94a3b8; margin-bottom: 10px;">আজকের স্পিন বাকি আছে</p>
+      <button class="btn btn-warning" onclick="spinWheelAction()">স্পিন করুন</button>
+    </div>
+
+    <h3 style="margin-top: 20px;">📺 টাস্ক ও এড ইনকাম</h3>
     <div class="card">
-      <p>ব্যালেন্স: <b id="cashBalance" style="color: #38bdf8;">৳100.00</b></p>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>বিজ্ঞাপন দেখার টাস্ক</strong>
+          <p style="font-size: 12px; color: #10b981;">প্রতি এড রিওয়ার্ড: ৳ ০.৫০</p>
+        </div>
+        <button class="btn" style="width: auto; padding: 8px 15px; margin: 0;" onclick="watchAdTask()">টাস্ক সম্পন্ন</button>
+      </div>
     </div>
   </div>
 
-  <!-- PROFILE PAGE -->
+  <!-- PAGE 3: WALLET & DEPOSIT / WITHDRAW -->
+  <div id="wallet" class="page">
+    <h3>💳 ওয়ালেট ওভারভিউ</h3>
+    <div class="card">
+      <p>মূল ব্যালেন্স: <b id="cashBalance" style="color: #38bdf8;">৳100.00</b></p>
+      <p>ইনকাম কমিশন: <b id="commissionBalance" style="color: #10b981;">৳0.00</b></p>
+    </div>
+
+    <h3>ডিপোজিট করুন (সরাসরি)</h3>
+    <div class="card" style="border: 1px solid #38bdf8;">
+      <p style="font-size: 13px; color: #38bdf8; margin-bottom: 5px;"><b>সেন্ট মানি করার অফিসিয়াল নাম্বার:</b></p>
+      <h3 style="background: #0b0f19; padding: 10px; border-radius: 8px; text-align: center; color: #facc15; letter-spacing: 1px;">01408060248</h3>
+      
+      <div class="input-group" style="margin-top: 10px;">
+        <label>পরিমাণ (৳)</label>
+        <input type="number" id="depAmount" placeholder="টাকার পরিমাণ লিখুন">
+      </div>
+      <div class="input-group">
+        <label>প্রেরক নম্বর</label>
+        <input type="text" id="senderNumber" placeholder="আপনার বিকাশ/নগদ নম্বর">
+      </div>
+      <div class="input-group">
+        <label>ট্রানজেকশন আইডি (TrxID)</label>
+        <input type="text" id="trxId" placeholder="যেমন: 8N7X6K5">
+      </div>
+      <button class="btn btn-success" onclick="submitDeposit()">ডিপোজিট রিকোয়েস্ট পাঠান</button>
+    </div>
+
+    <h3>💸 উইথড্র (টাকা উত্তোলন)</h3>
+    <div class="card">
+      <div class="input-group">
+        <label>উত্তোলনের পরিমাণ</label>
+        <input type="number" id="wAmount" placeholder="টাকার পরিমাণ লিখুন">
+      </div>
+      <button class="btn" onclick="requestWithdraw()">উইথড্র রিকোয়েস্ট দিন</button>
+    </div>
+  </div>
+
+  <!-- PAGE 4: PROFILE & REFERRAL -->
   <div id="profile" class="page">
-    <h3>👤 প্রোফাইল</h3>
+    <h3>👤 ইউজার প্রোফাইল</h3>
     <div class="card" style="text-align: center;">
+      <div id="profileImgContainer" style="width: 75px; height: 75px; border-radius: 50%; margin: 0 auto 10px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #1e293b; overflow:hidden;">U</div>
       <h4 id="profileName">ইউজার</h4>
       <p style="font-size: 13px; color: #94a3b8;" id="profilePhone">নম্বর: যুক্ত হয়নি</p>
+    </div>
+
+    <div class="card">
+      <h4>👥 রেফার এন্ড আর্ন</h4>
+      <p style="font-size: 12px; color: #94a3b8; margin: 8px 0;">বন্ধুকে রেফার করলে ইনস্ট্যান্ট ২০ টাকা বোনাস!</p>
+      <button class="btn btn-warning" onclick="copyReferralLink()">রেফার লিংক কপি করুন</button>
     </div>
   </div>
 
   <!-- Navbar -->
   <div class="navbar">
     <div class="nav-item active" onclick="showPage('home')"><i class="fa-solid fa-shop"></i><span>শপ</span></div>
+    <div class="nav-item" onclick="showPage('tasks')"><i class="fa-solid fa-rotate"></i><span>স্পিন ও টাস্ক</span></div>
     <div class="nav-item" onclick="showPage('wallet')"><i class="fa-solid fa-wallet"></i><span>ওয়ালেট</span></div>
     <div class="nav-item" onclick="showPage('profile')"><i class="fa-solid fa-user"></i><span>প্রোফাইল</span></div>
   </div>
 
   <script>
-    // Initialize Telegram WebApp correctly
     const tg = window.Telegram ? window.Telegram.WebApp : null;
-    
     if (tg) {
       tg.ready();
       tg.expand();
-      
-      // Auto-fill user info if available from Telegram
-      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        const tgUser = tg.initDataUnsafe.user;
-        if (!localStorage.getItem('user_name')) {
-          const fullName = (tgUser.first_name || '') + ' ' + (tgUser.last_name || '');
-          localStorage.setItem('user_name', fullName.trim() || 'Telegram User');
-        }
-      }
     }
 
     let isVerified = localStorage.getItem('is_verified') === 'true';
 
     if (isVerified) {
       document.getElementById('verificationModal').style.display = 'none';
-      document.getElementById('userName').innerText = localStorage.getItem('user_name') || 'ইউজার';
-      document.getElementById('profileName').innerText = localStorage.getItem('user_name') || 'ইউজার';
-      document.getElementById('userPhoneDisplay').innerText = localStorage.getItem('user_phone') || '';
-      document.getElementById('profilePhone').innerText = 'নম্বর: ' + (localStorage.getItem('user_phone') || '');
+      let userName = localStorage.getItem('user_name') || 'ইউজার';
+      let userPhone = localStorage.getItem('user_phone') || '';
+
+      document.getElementById('userName').innerText = userName;
+      document.getElementById('profileName').innerText = userName;
+      document.getElementById('userPhoneDisplay').innerText = userPhone;
+      document.getElementById('profilePhone').innerText = 'নম্বর: ' + userPhone;
+      
+      document.getElementById('userAvatarBox').innerText = userName.charAt(0);
+      document.getElementById('profileImgContainer').innerText = userName.charAt(0);
     } else {
       document.getElementById('verificationModal').style.display = 'flex';
     }
+
+    let balance = parseFloat(localStorage.getItem('user_balance')) || 100.00;
+    let commission = parseFloat(localStorage.getItem('user_commission')) || 0.00;
+    let subscriptions = JSON.parse(localStorage.getItem('user_subs')) || { silver: false, gold: false };
 
     function verifyAndRegisterDevice() {
       const name = document.getElementById('setupName').value.trim();
@@ -158,16 +247,94 @@
       localStorage.setItem('is_verified', 'true');
       localStorage.setItem('user_name', name);
       localStorage.setItem('user_phone', phone);
-      
-      document.getElementById('verificationModal').style.display = 'none';
       location.reload();
     }
+
+    function updateUI() {
+      document.getElementById('mainBalance').innerText = '৳ ' + (balance + commission).toFixed(2);
+      document.getElementById('cashBalance').innerText = '৳ ' + balance.toFixed(2);
+      document.getElementById('commissionBalance').innerText = '৳ ' + commission.toFixed(2);
+      
+      localStorage.setItem('user_balance', balance);
+      localStorage.setItem('user_commission', commission);
+
+      ['silver', 'gold'].forEach(sub => {
+        if(subscriptions[sub]) {
+          document.getElementById(`card-${sub}`).classList.remove('locked');
+          document.getElementById(`badge-${sub}`).innerText = 'আনলকড';
+          document.getElementById(`badge-${sub}`).className = 'badge';
+        }
+      });
+    }
+    updateUI();
 
     function showPage(pageId) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
       event.currentTarget.classList.add('active');
+    }
+
+    function spinWheelAction() {
+      const wheel = document.getElementById('spinWheel');
+      let randomDegree = Math.floor(Math.random() * 360) + 1440;
+      wheel.style.transform = `rotate(${randomDegree}deg)`;
+      
+      setTimeout(() => {
+        commission += 2.00;
+        updateUI();
+        alert('অভিনন্দন! আপনি স্পিন করে ২.০০ টাকা জিতেছেন!');
+      }, 3000);
+    }
+
+    function watchAdTask() {
+      commission += 0.50;
+      updateUI();
+      alert('টাস্ক সফল! আপনার অ্যাকাউন্টে ০.৫০ টাকা যোগ হয়েছে।');
+    }
+
+    function subscribeCategory(category, fee) {
+      if((balance + commission) < fee) {
+        alert(`পর্যাপ্ত ব্যালেন্স নেই। সাবস্ক্রিপশন ফি ${fee} টাকা।`);
+        return;
+      }
+      balance -= fee;
+      subscriptions[category] = true;
+      localStorage.setItem('user_subs', JSON.stringify(subscriptions));
+      updateUI();
+      alert('অভিনন্দন! ক্যাটাগরি সফলভাবে আনলক হয়েছে।');
+    }
+
+    function submitDeposit() {
+      const amt = document.getElementById('depAmount').value;
+      const sender = document.getElementById('senderNumber').value;
+      const trx = document.getElementById('trxId').value;
+      if(!amt || !sender || !trx) {
+        alert('সকল তথ্য সঠিকভাবে পূরণ করুন।');
+        return;
+      }
+      alert('ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে!');
+    }
+
+    function requestWithdraw() {
+      const amt = parseFloat(document.getElementById('wAmount').value);
+      if(!amt || amt < 100) {
+        alert('সর্বনিম্ন ১০০ টাকা উইথড্র করতে পারবেন।');
+        return;
+      }
+      if(amt > commission) {
+        alert('উত্তোলনযোগ্য কমিশন ব্যালেন্স পর্যাপ্ত নয়!');
+        return;
+      }
+      commission -= amt;
+      updateUI();
+      alert('উইথড্র রিকোয়েস্ট সফল হয়েছে। ২৪ ঘণ্টার মধ্যে পেমেন্ট পেয়ে যাবেন।');
+    }
+
+    function copyReferralLink() {
+      const userId = tg?.initDataUnsafe?.user?.id || '999';
+      navigator.clipboard.writeText(`https://t.me/Mowmachibot?start=ref_${userId}`);
+      alert('রেফারেল লিংক কপি হয়েছে! বন্ধুদের সাথে শেয়ার করুন।');
     }
   </script>
 </body>
